@@ -4,5 +4,7 @@ django-cors-headers
 celery
 rabbitmq
 drf-yasg
-mysqlclient
 python-environ
+mysqlclient
+mysql-connector-python
+python-dotenv
