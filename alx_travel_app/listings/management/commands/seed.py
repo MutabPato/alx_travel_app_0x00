@@ -1,8 +1,7 @@
 import os
-import functools
 import mysql.connector
 from dotenv import load_dotenv
-
+from pathlib import Path
 
 class DatabaseConnection():
     """
@@ -37,14 +36,30 @@ class DatabaseConnection():
         if self.conn is not None:
             self.conn.close()
 
-with DatabaseConnection() as conn:
-    cursor = conn.cursor()
-    with open('schema.sql', 'r') as schema_file:
-        schema_script = schema_file.read()
-        cursor.execute(schema_script)
-        conn.commit()
+def execute_queries(sql_file_name, conn):
+    file_path = Path(__file__).with_name(sql_file_name)
 
-    with open('seed.sql', 'r') as seed_file:
-        seed_script = schema_file.read()
-        cursor.execute(seed_script)
-        conn.commit()
+    with file_path.open('r') as sql_file:
+        sql_script = sql_file.read()
+
+    sql_commands = [
+        s.strip() for s in sql_script.split(';') if s.strip()
+    ]
+
+    print(f"Executing {len(sql_commands)} from {sql_file_name}")
+
+    for command in sql_commands:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(command)
+        except mysql.connector.Error as err:
+            print(f"Error executing command: {command[:100]} in {sql_file_name}")
+            print("Error: : {err}")
+            raise
+    conn.commit()
+    print("Successfully executed: {sql_file_name}")
+
+with DatabaseConnection() as conn:
+
+    execute_queries('schema.sql', conn)
+    execute_queries('seed.sql', conn)
